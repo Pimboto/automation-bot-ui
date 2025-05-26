@@ -34,21 +34,24 @@ const navItems: NavItem[] = [
   },
   {
     icon: <CalenderIcon />,
-    name: "Calendar",
-    path: "/calendar",
+    name: "Devices",
+    path: "/devices",
   },
   {
     icon: <UserCircleIcon />,
-    name: "User Profile",
-    path: "/profile",
+    name: "Automation",
+    subItems: [{ name: "Tinder", path: "/tinder", pro: false },
+      { name: "Bumble", path: "/bumble", pro: false },
+      { name: "Bumble Container", path: "/bumblecontainer", pro: false },
+    ],
   },
 
   {
-    name: "Forms",
+    name: "Others",
     icon: <ListIcon />,
-    subItems: [{ name: "Form Elements", path: "/form-elements", pro: false }],
+    subItems: [{ name: "Webhooks", path: "webhooks", pro: false }],
   },
-  {
+  /* {
     name: "Tables",
     icon: <TableIcon />,
     subItems: [{ name: "Basic Tables", path: "/basic-tables", pro: false }],
@@ -60,7 +63,7 @@ const navItems: NavItem[] = [
       { name: "Blank Page", path: "/blank", pro: false },
       { name: "404 Error", path: "/error-404", pro: false },
     ],
-  },
+  }, */
 ];
 
 const othersItems: NavItem[] = [

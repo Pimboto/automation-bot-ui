@@ -1,3 +1,120 @@
+// Device Types
+export interface Device {
+  udid: string;
+  name: string;
+  version: string;
+  isAvailable: boolean;
+  lastDetected: string;
+  inUseBy?: string | null;
+}
+
+export interface DevicesResponse {
+  status: string;
+  count: number;
+  devices: Device[];
+}
+
+export interface DeviceResponse {
+  status: string;
+  device: Device;
+}
+
+// Automation Types
+export interface AutomationSession {
+  id: string;
+  udid?: string;
+  deviceInfo?: Device;
+  device?: {
+    name: string;
+    udid: string;
+    version: string;
+    isAvailable: boolean;
+    lastDetected: string;
+  };
+  appiumPort?: number;
+  status: 'initializing' | 'running' | 'completed' | 'error' | 'stopped';
+  flow: string;
+  checkpoint: string;
+  startTime?: string;
+  endTime?: string;
+  error?: string | null;
+  result?: any;
+  infinite: boolean;
+  runCount?: number;
+  maxRuns: number;
+  profileGenerated?: boolean;
+}
+
+export interface AutomationStartRequest {
+  udid: string;
+  flow: 'tinder' | 'bumble' | 'bumblecontainer';
+  checkpoint: string;
+  generateProfile?: boolean;
+  infinite?: boolean;
+  maxRuns?: number;
+  maxConsecutiveErrors?: number;
+  profileOptions?: {
+    age?: number;
+    nameType?: string;
+    nameVariant?: string;
+  };
+  params?: Record<string, any>;
+}
+
+export interface AutomationStartResponse {
+  status: string;
+  message: string;
+  session: AutomationSession;
+}
+
+export interface AutomationStatusResponse {
+  status: string;
+  session: AutomationSession;
+}
+
+export interface AutomationLog {
+  timestamp: string;
+  level: 'info' | 'warn' | 'error' | 'debug';
+  message: string;
+  data: Record<string, any>;
+}
+
+export interface AutomationLogsResponse {
+  status: string;
+  count: number;
+  logs: AutomationLog[];
+}
+
+// Appium Types
+export interface AppiumServer {
+  udid: string;
+  appiumPort?: number;
+  appium?: number;
+  wdaPort?: number;
+  wda?: number;
+  mjpegPort?: number;
+  mjpeg?: number;
+  uptime: number;
+}
+
+export interface AppiumServersResponse {
+  status: string;
+  count: number;
+  servers: AppiumServer[];
+}
+
+export interface AppiumServerResponse {
+  status: string;
+  server: AppiumServer;
+}
+
+// Health Check Types
+export interface HealthResponse {
+  status: string;
+  version: string;
+  timestamp: string;
+}
+
 // API Response Types
 export interface SystemMetrics {
   startTime: string;
@@ -71,12 +188,12 @@ export interface MetricsResponse {
 }
 
 class ApiService {
-  private readonly baseURL: string;
-  private readonly token: string;
+  private baseURL: string;
+  private token: string;
 
   constructor() {
-    this.baseURL = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3000';
-    this.token = process.env.API_TOKEN ?? 'elmango10';
+    this.baseURL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000';
+    this.token = process.env.API_TOKEN || 'elmango10';
   }
 
   private async request<T>(endpoint: string, options: RequestInit = {}): Promise<T> {
@@ -108,6 +225,64 @@ class ApiService {
   // Get system metrics
   async getMetrics(): Promise<MetricsResponse> {
     return this.request<MetricsResponse>('/api/metrics');
+  }
+
+  // Health check
+  async getHealth(): Promise<HealthResponse> {
+    return this.request<HealthResponse>('/api/health');
+  }
+
+  // Device endpoints
+  async getDevices(): Promise<DevicesResponse> {
+    return this.request<DevicesResponse>('/api/devices');
+  }
+
+  async getAvailableDevices(): Promise<DevicesResponse> {
+    return this.request<DevicesResponse>('/api/devices/available');
+  }
+
+  async getDevice(udid: string): Promise<DeviceResponse> {
+    return this.request<DeviceResponse>(`/api/devices/${udid}`);
+  }
+
+  // Automation endpoints
+  async startAutomation(request: AutomationStartRequest): Promise<AutomationStartResponse> {
+    return this.request<AutomationStartResponse>('/api/automation/start', {
+      method: 'POST',
+      body: JSON.stringify(request),
+    });
+  }
+
+  async getAutomationStatus(sessionId: string): Promise<AutomationStatusResponse> {
+    return this.request<AutomationStatusResponse>(`/api/automation/${sessionId}/status`);
+  }
+
+  async getAutomationLogs(
+    sessionId: string,
+    limit: number = 50,
+    level?: 'info' | 'warn' | 'error' | 'debug'
+  ): Promise<AutomationLogsResponse> {
+    const params = new URLSearchParams({ limit: limit.toString() });
+    if (level) params.append('level', level);
+    
+    return this.request<AutomationLogsResponse>(
+      `/api/automation/${sessionId}/logs?${params.toString()}`
+    );
+  }
+
+  async stopAutomation(sessionId: string): Promise<{ status: string; message: string }> {
+    return this.request<{ status: string; message: string }>(`/api/automation/${sessionId}/stop`, {
+      method: 'POST',
+    });
+  }
+
+  // Appium server endpoints
+  async getAppiumServers(): Promise<AppiumServersResponse> {
+    return this.request<AppiumServersResponse>('/api/appium/servers');
+  }
+
+  async getAppiumServer(udid: string): Promise<AppiumServerResponse> {
+    return this.request<AppiumServerResponse>(`/api/appium/servers/${udid}`);
   }
 
   // Helper methods for specific metric categories
@@ -163,6 +338,42 @@ export const formatUptime = (seconds: number): string => {
   }
 };
 
+
 export const formatPercentage = (value: number): string => {
   return `${value.toFixed(1)}%`;
+};
+
+export const formatTimestamp = (timestamp: string): string => {
+  return new Date(timestamp).toLocaleString();
+};
+
+export const getDeviceType = (name: string): 'iPhone' | 'iPad' | 'Simulator' | 'Unknown' => {
+  const lowerName = name.toLowerCase();
+  if (lowerName.includes('iphone')) return 'iPhone';
+  if (lowerName.includes('ipad')) return 'iPad';
+  if (lowerName.includes('simulator')) return 'Simulator';
+  return 'Unknown';
+};
+
+export const getDeviceStatusColor = (isAvailable: boolean, inUseBy?: string | null): string => {
+  if (inUseBy) return 'error'; // En uso
+  if (isAvailable) return 'success'; // Disponible
+  return 'warning'; // No disponible
+};
+
+export const getAutomationStatusColor = (status: AutomationSession['status']): string => {
+  switch (status) {
+    case 'running':
+      return 'success';
+    case 'completed':
+      return 'info';
+    case 'error':
+      return 'error';
+    case 'initializing':
+      return 'warning';
+    case 'stopped':
+      return 'warning';
+    default:
+      return 'warning';
+  }
 };
