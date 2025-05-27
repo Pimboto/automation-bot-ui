@@ -40,19 +40,12 @@ const navItems: NavItem[] = [
     ],
   },
 
-  /* {
-    name: "Tables",
-    icon: <TableIcon />,
-    subItems: [{ name: "Basic Tables", path: "/basic-tables", pro: false }],
-  },
   {
-    name: "Pages",
-    icon: <PageIcon />,
-    subItems: [
-      { name: "Blank Page", path: "/blank", pro: false },
-      { name: "404 Error", path: "/error-404", pro: false },
-    ],
-  }, */
+  name: "Sessions",
+  path: "/sessions",
+  icon: <ListIcon/>
+},
+
 ];
 
 const othersItems: NavItem[] = [

@@ -213,9 +213,15 @@ export interface MetricsResponse {
   };
 }
 
+export interface AutomationSessionsResponse {
+  status: string;
+  sessions: AutomationSession[];
+}
+
+
 class ApiService {
-  private baseURL: string;
-  private token: string;
+  private readonly baseURL: string;
+  private readonly token: string;
 
   constructor() {
     this.baseURL = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3000';
@@ -290,6 +296,10 @@ class ApiService {
 
   async getAutomationStatus(sessionId: string): Promise<AutomationStatusResponse> {
     return this.request<AutomationStatusResponse>(`/api/automation/${sessionId}/status`);
+  }
+
+  async getAutomationSessions(): Promise<AutomationSessionsResponse> {
+    return this.request<AutomationSessionsResponse>('/api/automation');
   }
 
   async getAutomationLogs(

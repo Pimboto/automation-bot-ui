@@ -246,14 +246,7 @@ const DynamicAutomationForm: React.FC<DynamicAutomationFormProps> = ({
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div>
-        <h2 className="text-2xl font-semibold text-gray-800 dark:text-white/90 capitalize">
-          Start {flowName} Automation
-        </h2>
-        <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
-          Select a device and configure automation parameters
-        </p>
-      </div>
+
 
       {/* Error/Success Messages */}
       {startError && (
