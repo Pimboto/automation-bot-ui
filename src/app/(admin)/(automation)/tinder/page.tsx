@@ -1,17 +1,16 @@
 "use client";
-
 import PageBreadcrumb from "@/components/common/PageBreadCrumb";
 import AutomationStart from "@/components/automation/AutomationStart";
 import React from "react";
 
-export default function BumbleContainerAutomation() {
+export default function TinderAutomation() {
   return (
     <div>
-      <PageBreadcrumb pageTitle="Bumble Container Automation" />
+      <PageBreadcrumb pageTitle="Tinder Automation" />
       <AutomationStart 
-        flow="bumblecontainer"
+        flow="tinder"
         onAutomationStarted={(session) => {
-          console.log('Bumble Container automation started:', session);
+          console.log('Tinder automation started:', session);
           // You can add notification logic here
         }}
       />
