@@ -19,6 +19,32 @@ export interface DeviceResponse {
   device: Device;
 }
 
+// Flow Configuration Types (NUEVOS)
+export interface FlowCheckpoint {
+  name: string;
+}
+
+export interface FlowConfig {
+  name: string;
+  supportsInfiniteMode: boolean;
+  available: boolean;
+  checkpoints: FlowCheckpoint[];
+  defaultParams: {
+    checkpoint: string;
+    generateProfile?: boolean;
+    infinite?: boolean;
+    maxRuns?: number;
+    maxConsecutiveErrors?: number;
+    params?: Record<string, any>;
+  };
+}
+
+export interface FlowsResponse {
+  status: string;
+  count: number;
+  flows: FlowConfig[];
+}
+
 // Automation Types
 export interface AutomationSession {
   id: string;
@@ -47,7 +73,7 @@ export interface AutomationSession {
 
 export interface AutomationStartRequest {
   udid: string;
-  flow: 'tinder' | 'bumble' | 'bumblecontainer';
+  flow: string; // Cambiado para ser más flexible
   checkpoint: string;
   generateProfile?: boolean;
   infinite?: boolean;
@@ -192,8 +218,8 @@ class ApiService {
   private token: string;
 
   constructor() {
-    this.baseURL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000';
-    this.token = process.env.API_TOKEN || 'elmango10';
+    this.baseURL = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3000';
+    this.token = process.env.API_TOKEN ?? 'elmango10';
   }
 
   private async request<T>(endpoint: string, options: RequestInit = {}): Promise<T> {
@@ -243,6 +269,15 @@ class ApiService {
 
   async getDevice(udid: string): Promise<DeviceResponse> {
     return this.request<DeviceResponse>(`/api/devices/${udid}`);
+  }
+
+  // Flow configuration endpoints (NUEVOS)
+  async getAutomationFlows(): Promise<FlowsResponse> {
+    return this.request<FlowsResponse>('/api/automation/flows');
+  }
+
+  async getFlowConfig(flowName: string): Promise<{ status: string; flow: FlowConfig }> {
+    return this.request<{ status: string; flow: FlowConfig }>(`/api/automation/flows/${flowName}`);
   }
 
   // Automation endpoints
@@ -337,7 +372,6 @@ export const formatUptime = (seconds: number): string => {
     return `${minutes}m`;
   }
 };
-
 
 export const formatPercentage = (value: number): string => {
   return `${value.toFixed(1)}%`;

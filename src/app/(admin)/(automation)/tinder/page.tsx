@@ -1,18 +1,21 @@
 "use client";
 import PageBreadcrumb from "@/components/common/PageBreadCrumb";
-import AutomationStart from "@/components/automation/AutomationStart";
+import DynamicAutomationForm from "@/components/automation/DynamicAutomationForm";
 import React from "react";
 
-export default function TinderAutomation() {
+export default function TinderAutomationPage() {
+  const handleAutomationStarted = (session: any) => {
+    console.log('Tinder automation started:', session);
+    // You can add notification logic here
+    // For example: toast notification, redirect, etc.
+  };
+
   return (
     <div>
       <PageBreadcrumb pageTitle="Tinder Automation" />
-      <AutomationStart 
-        flow="tinder"
-        onAutomationStarted={(session) => {
-          console.log('Tinder automation started:', session);
-          // You can add notification logic here
-        }}
+      <DynamicAutomationForm 
+        flowName="tinder"
+        onAutomationStarted={handleAutomationStarted}
       />
     </div>
   );

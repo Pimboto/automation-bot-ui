@@ -1,14 +1,14 @@
 "use client";
 import PageBreadcrumb from "@/components/common/PageBreadCrumb";
-import AutomationStart from "@/components/automation/AutomationStart";
+import DynamicAutomationForm from "@/components/automation/DynamicAutomationForm";
 import React from "react";
 
 export default function BumbleAutomation() {
   return (
     <div>
       <PageBreadcrumb pageTitle="Bumble Automation" />
-      <AutomationStart 
-        flow="bumble"
+      <DynamicAutomationForm 
+        flowName="bumble"
         onAutomationStarted={(session) => {
           console.log('Bumble automation started:', session);
           // You can add notification logic here
