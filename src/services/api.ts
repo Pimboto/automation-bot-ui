@@ -1,4 +1,4 @@
-// Device Types
+// /Users/tinder/Work/automation-bot-ui/src/services/api.ts
 export interface Device {
   udid: string;
   name: string;
@@ -35,6 +35,13 @@ export interface FlowConfig {
     infinite?: boolean;
     maxRuns?: number;
     maxConsecutiveErrors?: number;
+    profileOptions?: {
+      age?: number;
+      nameType?: string;
+      nameVariant?: string;
+      tipoProxy?: string;  // ADDED
+      emailreal?: boolean; // ADDED
+    };
     params?: Record<string, any>;
   };
 }
@@ -69,6 +76,13 @@ export interface AutomationSession {
   runCount?: number;
   maxRuns: number;
   profileGenerated?: boolean;
+  profileOptions?: {
+    age?: number;
+    nameType?: string;
+    nameVariant?: string;
+    tipoProxy?: string;  // ADDED
+    emailreal?: boolean; // ADDED
+  };
 }
 
 export interface AutomationStartRequest {
@@ -83,6 +97,8 @@ export interface AutomationStartRequest {
     age?: number;
     nameType?: string;
     nameVariant?: string;
+    tipoProxy?: string;  // ADDED - This was missing
+    emailreal?: boolean; // ADDED - This was missing
   };
   params?: Record<string, any>;
 }

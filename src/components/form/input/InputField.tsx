@@ -5,6 +5,7 @@ interface InputProps {
   id?: string;
   name?: string;
   placeholder?: string;
+  value?: string | number; // Added value prop for controlled component
   defaultValue?: string | number;
   onChange?: (e: React.ChangeEvent<HTMLInputElement>) => void;
   className?: string;
@@ -22,6 +23,7 @@ const Input: FC<InputProps> = ({
   id,
   name,
   placeholder,
+  value, // Use value for controlled component
   defaultValue,
   onChange,
   className = "",
@@ -47,6 +49,13 @@ const Input: FC<InputProps> = ({
     inputClasses += ` bg-transparent text-gray-800 border-gray-300 focus:border-brand-300 focus:ring-3 focus:ring-brand-500/10 dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 dark:focus:border-brand-800`;
   }
 
+  // Determine if it's controlled (has value prop) or uncontrolled (has defaultValue)
+  const isControlled = value !== undefined;
+  
+  const inputProps = isControlled 
+    ? { value } // Controlled component
+    : { defaultValue }; // Uncontrolled component
+
   return (
     <div className="relative">
       <input
@@ -54,7 +63,7 @@ const Input: FC<InputProps> = ({
         id={id}
         name={name}
         placeholder={placeholder}
-        defaultValue={defaultValue}
+        {...inputProps}
         onChange={onChange}
         min={min}
         max={max}

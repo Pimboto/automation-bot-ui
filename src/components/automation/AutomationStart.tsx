@@ -1,3 +1,4 @@
+///Users/tinder/Work/automation-bot-ui/src/components/automation/AutomationStart.tsx
 "use client";
 import React, { useState } from 'react';
 import { apiService, Device, AutomationStartRequest, AutomationSession } from '@/services/api';

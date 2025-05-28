@@ -1,3 +1,4 @@
+///Users/tinder/Work/automation-bot-ui/src/components/form/input/Checkbox.tsx
 import type React from "react";
 
 interface CheckboxProps {
