@@ -7,7 +7,7 @@ interface CacheItem<T> {
 
 export class CacheManager {
   private static instance: CacheManager;
-  private memoryCache: Map<string, any> = new Map();
+  private readonly memoryCache: Map<string, CacheItem<unknown>> = new Map();
 
   static getInstance(): CacheManager {
     if (!CacheManager.instance) {
@@ -82,7 +82,7 @@ export class CacheManager {
       timestamp: Date.now(),
       ttl,
     };
-    this.memoryCache.set(key, item);
+    this.memoryCache.set(key, item as CacheItem<unknown>);
 
     // Auto cleanup after TTL
     setTimeout(() => {
@@ -91,7 +91,7 @@ export class CacheManager {
   }
 
   getMemory<T>(key: string): T | null {
-    const item = this.memoryCache.get(key) as CacheItem<T>;
+    const item = this.memoryCache.get(key) as CacheItem<T> | undefined;
     if (!item) return null;
 
     const now = Date.now();

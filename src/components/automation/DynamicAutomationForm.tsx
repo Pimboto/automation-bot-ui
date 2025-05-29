@@ -1,7 +1,7 @@
 "use client";
 import React, { useState, useEffect } from 'react';
 import { useFlowConfig } from '@/hooks/useFlow';
-import { Device, AutomationStartRequest, apiService } from '@/services/api';
+import { Device, AutomationStartRequest, apiService, AutomationSession } from '@/services/api';
 import DevicesList from '../devices/DevicesList';
 import Button from '../ui/button/Button';
 import Input from '../form/input/InputField';
@@ -15,7 +15,7 @@ import { ChevronDownIcon } from '@/icons';
 
 interface DynamicAutomationFormProps {
   flowName: string;
-  onAutomationStarted?: (session: any) => void;
+  onAutomationStarted?: (session: AutomationSession) => void;
 }
 
 interface FormState {
@@ -31,7 +31,7 @@ interface FormState {
     tipoProxy?: string;
     emailreal?: boolean;
   };
-  params: Record<string, any>;
+  params: Record<string, string | number | boolean>;
 }
 
 interface AutomationConfig {
@@ -178,14 +178,14 @@ const DynamicAutomationForm: React.FC<DynamicAutomationFormProps> = ({
     }
   };
 
-  const handleInputChange = (field: keyof FormState, value: any) => {
+  const handleInputChange = (field: keyof FormState, value: string | number | boolean) => {
     setFormState(prev => ({
       ...prev,
       [field]: value,
     }));
   };
 
-  const handleParamChange = (paramKey: string, value: any) => {
+  const handleParamChange = (paramKey: string, value: string | number | boolean) => {
     setFormState(prev => ({
       ...prev,
       params: {
@@ -195,7 +195,7 @@ const DynamicAutomationForm: React.FC<DynamicAutomationFormProps> = ({
     }));
   };
 
-  const handleProfileOptionChange = (option: keyof FormState['profileOptions'], value: any) => {
+  const handleProfileOptionChange = (option: keyof FormState['profileOptions'], value: string | number | boolean) => {
     setFormState(prev => ({
       ...prev,
       profileOptions: {
@@ -383,7 +383,7 @@ const DynamicAutomationForm: React.FC<DynamicAutomationFormProps> = ({
             Flow Not Found
           </h3>
           <p className="text-sm text-gray-500 dark:text-gray-400">
-            The automation flow "{flowName}" could not be found.
+            The automation flow `{flowName}` could not be found.
           </p>
         </div>
       </div>
@@ -905,7 +905,7 @@ const DynamicAutomationForm: React.FC<DynamicAutomationFormProps> = ({
         </h3>
         
         <p className="mb-6 text-sm text-gray-600 dark:text-gray-400">
-          Are you sure you want to delete "{selectedConfig?.name}"? This action cannot be undone.
+          Are you sure you want to delete `{selectedConfig?.name}`? This action cannot be undone.
         </p>
 
         <div className="flex justify-end gap-3">

@@ -1,7 +1,7 @@
 // /Users/tinder/Work/automation-bot-ui/src/components/automation/LogViewer.tsx
 "use client";
-import React, { useState, useEffect, useRef } from 'react';
-import { apiService, AutomationLog, AutomationSession, getAutomationStatusColor} from '@/services/api';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
+import { apiService, AutomationLog, AutomationSession, getAutomationStatusColor, BadgeColor} from '@/services/api';
 import Badge from '../ui/badge/Badge';
 import Button from '../ui/button/Button';
 import { useInterval } from '@/hooks/useInterval';
@@ -12,6 +12,8 @@ interface LogViewerProps {
   refreshInterval?: number;
 }
 
+type LogLevel = 'all' | 'info' | 'warn' | 'error' | 'debug';
+
 const LogViewer: React.FC<LogViewerProps> = ({ 
   sessionId, 
   autoRefresh = true,
@@ -21,22 +23,22 @@ const LogViewer: React.FC<LogViewerProps> = ({
   const [session, setSession] = useState<AutomationSession | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [logLevel, setLogLevel] = useState<'all' | 'info' | 'warn' | 'error' | 'debug'>('all');
+  const [logLevel, setLogLevel] = useState<LogLevel>('all');
   const [autoScroll, setAutoScroll] = useState(true);
   const [isPaused, setIsPaused] = useState(false);
   const logsEndRef = useRef<HTMLDivElement>(null);
   const logsContainerRef = useRef<HTMLDivElement>(null);
 
-  const fetchSessionStatus = async () => {
+  const fetchSessionStatus = useCallback(async () => {
     try {
       const response = await apiService.getAutomationStatus(sessionId);
       setSession(response.session);
     } catch (err) {
       console.error('Error fetching session status:', err);
     }
-  };
+  }, [sessionId]);
 
-  const fetchLogs = async () => {
+  const fetchLogs = useCallback(async () => {
     if (isPaused) return;
 
     try {
@@ -53,11 +55,11 @@ const LogViewer: React.FC<LogViewerProps> = ({
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [sessionId, logLevel, isPaused, fetchSessionStatus]);
 
   useEffect(() => {
     fetchLogs();
-  }, [sessionId, logLevel]);
+  }, [fetchLogs]);
 
   // Auto-refresh logs
   useInterval(() => {
@@ -105,22 +107,7 @@ const LogViewer: React.FC<LogViewerProps> = ({
     URL.revokeObjectURL(url);
   };
 
-  const getLogLevelColor = (level: AutomationLog['level']) => {
-    switch (level) {
-      case 'info':
-        return 'text-blue-600 dark:text-blue-400';
-      case 'warn':
-        return 'text-yellow-600 dark:text-yellow-400';
-      case 'error':
-        return 'text-red-600 dark:text-red-400';
-      case 'debug':
-        return 'text-gray-600 dark:text-gray-400';
-      default:
-        return 'text-gray-600 dark:text-gray-400';
-    }
-  };
-
-  const getLogLevelBadgeColor = (level: AutomationLog['level']) => {
+  const getLogLevelBadgeColor = (level: AutomationLog['level']): BadgeColor => {
     switch (level) {
       case 'info':
         return 'info';
@@ -198,7 +185,7 @@ const LogViewer: React.FC<LogViewerProps> = ({
           {/* Log Level Filter */}
           <select
             value={logLevel}
-            onChange={(e) => setLogLevel(e.target.value as any)}
+            onChange={(e) => setLogLevel(e.target.value as LogLevel)}
             className="rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm dark:border-gray-700 dark:bg-gray-800"
           >
             <option value="all">All Levels</option>

@@ -80,7 +80,7 @@ export function useFlows(): UseFlowsReturn {
 
 // Hook for specific flow configuration
 export function useFlowConfig(flowName: string): UseFlowConfigReturn {
-  const { flows, isLoading, error, getFlowByName, refetch } = useFlows();
+  const { isLoading, error, getFlowByName, refetch } = useFlows();
   
   const flowConfig = flowName ? (getFlowByName(flowName) || null) : null;
 

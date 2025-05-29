@@ -15,6 +15,21 @@ interface AutomationStartProps {
   onAutomationStarted?: (session: AutomationSession) => void;
 }
 
+interface AutomationFormData {
+  checkpoint: string;
+  generateProfile: boolean;
+  infinite: boolean;
+  maxRuns: number;
+  maxConsecutiveErrors: number;
+  profileAge: number;
+  nameType: string;
+  nameVariant: string;
+  waitTimeAfterCaptcha: number;
+  photoCount: number;
+  dragDistanceSlider: boolean;
+  totalAccountCreationTime: number;
+}
+
 const AutomationStart: React.FC<AutomationStartProps> = ({ flow, onAutomationStarted }) => {
   const [selectedDevice, setSelectedDevice] = useState<Device | null>(null);
   const [isStarting, setIsStarting] = useState(false);
@@ -22,7 +37,7 @@ const AutomationStart: React.FC<AutomationStartProps> = ({ flow, onAutomationSta
   const [success, setSuccess] = useState<string | null>(null);
 
   // Form state
-  const [formData, setFormData] = useState({
+  const [formData, setFormData] = useState<AutomationFormData>({
     checkpoint: 'deletePhotos',
     generateProfile: true,
     infinite: true,
@@ -53,7 +68,7 @@ const AutomationStart: React.FC<AutomationStartProps> = ({ flow, onAutomationSta
     { value: 'custom', label: 'Custom' }
   ];
 
-  const handleInputChange = (field: string, value: any) => {
+  const handleInputChange = (field: keyof AutomationFormData, value: string | number | boolean) => {
     setFormData(prev => ({
       ...prev,
       [field]: value

@@ -26,7 +26,6 @@ const SessionsList: React.FC = () => {
   const [sessions, setSessions] = useState<SessionWithExtras[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [filterStatus, setFilterStatus] = useState<string>('all');
   const [filterFlow, setFilterFlow] = useState<string>('all');
   const [showOnlyActive, setShowOnlyActive] = useState(false);
 
@@ -92,9 +91,6 @@ const SessionsList: React.FC = () => {
 
   const filteredSessions = sessions.filter(session => {
     if (showOnlyActive && session.status !== 'running' && session.status !== 'initializing') {
-      return false;
-    }
-    if (filterStatus !== 'all' && session.status !== filterStatus) {
       return false;
     }
     if (filterFlow !== 'all' && session.flow !== filterFlow) {

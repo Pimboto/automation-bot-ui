@@ -9,10 +9,19 @@ import { apiService, AutomationMetrics } from "@/services/api";
 const ReactApexChart = dynamic(() => import("react-apexcharts"), {
   ssr: false,
 });
+interface ChartDataPoint {
+  time: string;
+  likes: number;
+  nopes: number;
+  matches: number;
+  swipes: number;
+}
+
 
 export default function AutomationChart() {
   const [automationData, setAutomationData] = useState<AutomationMetrics | null>(null);
-  const [historicalData, setHistoricalData] = useState<any[]>([]);
+    const [historicalData, setHistoricalData] = useState<ChartDataPoint[]>([]);
+
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 

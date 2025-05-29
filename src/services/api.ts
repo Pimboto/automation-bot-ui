@@ -42,7 +42,7 @@ export interface FlowConfig {
       tipoProxy?: string;  // ADDED
       emailreal?: boolean; // ADDED
     };
-    params?: Record<string, any>;
+    params?: Record<string, string | number | boolean>;
   };
 }
 
@@ -71,7 +71,7 @@ export interface AutomationSession {
   startTime?: string;
   endTime?: string;
   error?: string | null;
-  result?: any;
+  result?: unknown;
   infinite: boolean;
   runCount?: number;
   maxRuns: number;
@@ -100,7 +100,7 @@ export interface AutomationStartRequest {
     tipoProxy?: string;  // ADDED - This was missing
     emailreal?: boolean; // ADDED - This was missing
   };
-  params?: Record<string, any>;
+  params?: Record<string, string | number | boolean>;
 }
 
 export interface AutomationStartResponse {
@@ -118,7 +118,7 @@ export interface AutomationLog {
   timestamp: string;
   level: 'info' | 'warn' | 'error' | 'debug';
   message: string;
-  data: Record<string, any>;
+  data: Record<string, unknown>;
 }
 
 export interface AutomationLogsResponse {
@@ -415,13 +415,16 @@ export const getDeviceType = (name: string): 'iPhone' | 'iPad' | 'Simulator' | '
   return 'Unknown';
 };
 
-export const getDeviceStatusColor = (isAvailable: boolean, inUseBy?: string | null): string => {
+// Badge color type to match the Badge component
+export type BadgeColor = "primary" | "success" | "error" | "warning" | "info" | "light" | "dark";
+
+export const getDeviceStatusColor = (isAvailable: boolean, inUseBy?: string | null): BadgeColor => {
   if (inUseBy) return 'error'; // En uso
   if (isAvailable) return 'success'; // Disponible
   return 'warning'; // No disponible
 };
 
-export const getAutomationStatusColor = (status: AutomationSession['status']): string => {
+export const getAutomationStatusColor = (status: AutomationSession['status']): BadgeColor => {
   switch (status) {
     case 'running':
       return 'success';
