@@ -48,7 +48,7 @@ interface AutomationConfig {
 const nameConfig = {
   similar: ["lola", "iris", "aura"],
   variation: ["Sanlola", "IrisBaker", "Aurabel"],
-  phrase: ["Sanlola", "IrisBaker", "Aurabel"]
+  phrase: ["Sanlola", "IrisBaker", "Aurabel", "Katie"]
 };
 
 // Skeleton component for loading state
