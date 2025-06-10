@@ -106,6 +106,9 @@ const DynamicAutomationForm: React.FC<DynamicAutomationFormProps> = ({
   const [configName, setConfigName] = useState('');
   const [configDescription, setConfigDescription] = useState('');
   const [saveError, setSaveError] = useState<string | null>(null);
+  const [isEditMode, setIsEditMode] = useState(false);
+  const [editingConfigId, setEditingConfigId] = useState<string | null>(null);
+  const [configJson, setConfigJson] = useState<string>('');
   
   // Modal states
   const saveModal = useModal();
@@ -133,8 +136,7 @@ const DynamicAutomationForm: React.FC<DynamicAutomationFormProps> = ({
   useEffect(() => {
     if (flowConfig?.defaultParams) {
       const defaults = flowConfig.defaultParams;
-      setFormState(prev => ({
-        ...prev,
+      const newState = {
         checkpoint: defaults.checkpoint || '',
         generateProfile: defaults.generateProfile ?? false,
         infinite: flowConfig.supportsInfiniteMode ? (defaults.infinite ?? true) : false,
@@ -148,7 +150,9 @@ const DynamicAutomationForm: React.FC<DynamicAutomationFormProps> = ({
           emailreal: defaults.profileOptions?.emailreal ?? false,
         },
         params: { ...defaults.params || {} },
-      }));
+      };
+      setFormState(newState);
+      setConfigJson(JSON.stringify(newState, null, 2));
     }
   }, [flowConfig]);
 
@@ -230,9 +234,20 @@ const DynamicAutomationForm: React.FC<DynamicAutomationFormProps> = ({
       return;
     }
 
-    // Check for duplicate names in the same flow
+    // Parse and validate JSON
+    let parsedConfig: FormState;
+    try {
+      parsedConfig = JSON.parse(configJson);
+    } catch {
+      setSaveError('Invalid JSON configuration');
+      return;
+    }
+
+    // Check for duplicate names in the same flow (but not when editing)
     const existingConfig = configurations.find(
-      config => config.name.toLowerCase() === configName.toLowerCase() && config.flowName === flowName
+      config => config.name.toLowerCase() === configName.toLowerCase() && 
+      config.flowName === flowName &&
+      config.id !== editingConfigId
     );
 
     if (existingConfig) {
@@ -240,27 +255,72 @@ const DynamicAutomationForm: React.FC<DynamicAutomationFormProps> = ({
       return;
     }
 
-    const newConfig: AutomationConfig = {
-      id: Date.now().toString(),
-      name: configName.trim(),
-      flowName,
-      description: configDescription.trim() || undefined,
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-      config: { ...formState },
-    };
+    if (isEditMode && editingConfigId) {
+      // Update existing configuration
+      const updatedConfigs = configurations.map(config => {
+        if (config.id === editingConfigId) {
+          return {
+            ...config,
+            name: configName.trim(),
+            description: configDescription.trim() || undefined,
+            updatedAt: new Date().toISOString(),
+            config: parsedConfig,
+          };
+        }
+        return config;
+      });
+      saveConfigurations(updatedConfigs);
+      setSuccess('Configuration updated successfully!');
+    } else {
+      // Create new configuration
+      const newConfig: AutomationConfig = {
+        id: Date.now().toString(),
+        name: configName.trim(),
+        flowName,
+        description: configDescription.trim() || undefined,
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+        config: parsedConfig,
+      };
 
-    const updatedConfigs = [...configurations, newConfig];
-    saveConfigurations(updatedConfigs);
+      const updatedConfigs = [...configurations, newConfig];
+      saveConfigurations(updatedConfigs);
+      setSuccess('Configuration saved successfully!');
+    }
 
     // Reset form
     setConfigName('');
     setConfigDescription('');
+    setIsEditMode(false);
+    setEditingConfigId(null);
     saveModal.closeModal();
     
     // Show success message
-    setSuccess('Configuration saved successfully!');
     setTimeout(() => setSuccess(null), 3000);
+  };
+
+  const handleEditConfig = (config: AutomationConfig) => {
+    // Load the configuration into the form
+    handleLoadConfiguration(config.config);
+    
+    // Set edit mode and populate save modal fields
+    setIsEditMode(true);
+    setEditingConfigId(config.id);
+    setConfigName(config.name);
+    setConfigDescription(config.description || '');
+    setConfigJson(JSON.stringify(config.config, null, 2));
+    
+    // Open save modal
+    saveModal.openModal();
+  };
+
+  const handleSaveAsNew = () => {
+    setIsEditMode(false);
+    setEditingConfigId(null);
+    setConfigName('');
+    setConfigDescription('');
+    setConfigJson(JSON.stringify(formState, null, 2));
+    saveModal.openModal();
   };
 
   const handleDeleteConfig = () => {
@@ -478,12 +538,12 @@ const DynamicAutomationForm: React.FC<DynamicAutomationFormProps> = ({
               1. Saved Configurations
             </h3>
             <p className="text-sm text-gray-500 dark:text-gray-400">
-              Save and manage your automation configurations for {flowName}
+              Save, edit and manage your automation configurations for {flowName}
             </p>
           </div>
 
           <div className="flex items-center gap-2">
-            <Button size="sm" onClick={saveModal.openModal}>
+            <Button size="sm" onClick={handleSaveAsNew}>
               💾 Save Current
             </Button>
           </div>
@@ -560,6 +620,12 @@ const DynamicAutomationForm: React.FC<DynamicAutomationFormProps> = ({
                       👁️ Preview
                     </button>
                     <button
+                      onClick={() => handleEditConfig(config)}
+                      className="rounded-lg bg-blue-500 px-3 py-1.5 text-xs font-medium text-white hover:bg-blue-600"
+                    >
+                      ✏️ Edit
+                    </button>
+                    <button
                       onClick={() => handleLoadConfig(config)}
                       className="rounded-lg bg-brand-500 px-3 py-1.5 text-xs font-medium text-white hover:bg-brand-600"
                     >
@@ -594,7 +660,7 @@ const DynamicAutomationForm: React.FC<DynamicAutomationFormProps> = ({
       {/* Device Selection */}
       <div className="rounded-2xl border border-gray-200 bg-white p-5 dark:border-gray-800 dark:bg-white/[0.03] sm:p-6">
         <h3 className="mb-4 text-lg font-medium text-gray-800 dark:text-white/90">
-          1. Select Device
+          2. Select Device
         </h3>
         <DevicesList 
           onDeviceSelect={setSelectedDevice}
@@ -606,7 +672,7 @@ const DynamicAutomationForm: React.FC<DynamicAutomationFormProps> = ({
       {/* Configuration Form */}
       <div className="rounded-2xl border border-gray-200 bg-white p-5 dark:border-gray-800 dark:bg-white/[0.03] sm:p-6">
         <h3 className="mb-6 text-lg font-medium text-gray-800 dark:text-white/90">
-          2. Configure Automation
+          3. Configure Automation
         </h3>
 
         <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
@@ -849,11 +915,17 @@ const DynamicAutomationForm: React.FC<DynamicAutomationFormProps> = ({
       {/* Save Configuration Modal */}
       <Modal
         isOpen={saveModal.isOpen}
-        onClose={saveModal.closeModal}
+        onClose={() => {
+          saveModal.closeModal();
+          setIsEditMode(false);
+          setEditingConfigId(null);
+          setConfigName('');
+          setConfigDescription('');
+        }}
         className="max-w-md p-6"
       >
         <h3 className="mb-4 text-lg font-medium text-gray-800 dark:text-white/90">
-          💾 Save Configuration
+          {isEditMode ? '✏️ Edit Configuration' : '💾 Save Configuration'}
         </h3>
 
         <div className="space-y-4">
@@ -877,6 +949,15 @@ const DynamicAutomationForm: React.FC<DynamicAutomationFormProps> = ({
             />
           </div>
 
+          <div>
+            <Label>Configuration (JSON)</Label>
+            <textarea
+              className="w-full h-40 p-2 border rounded text-xs font-mono bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100"
+              value={configJson}
+              onChange={(e) => setConfigJson(e.target.value)}
+            />
+          </div>
+
           {saveError && (
             <div className="rounded-lg border border-red-200 bg-red-50 p-3 dark:border-red-800 dark:bg-red-900/20">
               <p className="text-sm text-red-700 dark:text-red-300">{saveError}</p>
@@ -884,11 +965,17 @@ const DynamicAutomationForm: React.FC<DynamicAutomationFormProps> = ({
           )}
 
           <div className="flex justify-end gap-3">
-            <Button size="sm" variant="outline" onClick={saveModal.closeModal}>
+            <Button size="sm" variant="outline" onClick={() => {
+              saveModal.closeModal();
+              setIsEditMode(false);
+              setEditingConfigId(null);
+              setConfigName('');
+              setConfigDescription('');
+            }}>
               Cancel
             </Button>
             <Button size="sm" onClick={handleSaveConfig}>
-              💾 Save Configuration
+              {isEditMode ? '💾 Update Configuration' : '💾 Save Configuration'}
             </Button>
           </div>
         </div>
