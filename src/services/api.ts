@@ -1,10 +1,71 @@
 // /Users/tinder/Work/automation-bot-ui/src/services/api.ts
+
+// Raw API response types
+interface RawApiResponse<T> {
+  status: string;
+  requestId?: string;
+  data?: T;
+  count?: number;
+  stats?: {
+    totalDevices?: number;
+    connectedDevices?: number;
+    availableDevices?: number;
+    reservedDevices?: number;
+  };
+  timestamp?: string;
+  message?: string;
+  // For legacy compatibility
+  devices?: RawDevice[];
+  flows?: RawFlow[];
+  sessions?: AutomationSession[];
+  logs?: AutomationLog[];
+  servers?: AppiumServer[];
+  metrics?: MetricsResponse['metrics'];
+  device?: RawDevice;
+  flow?: RawFlow;
+  session?: AutomationSession;
+  server?: AppiumServer;
+}
+
+interface RawDevice {
+  udid: string;
+  name: string;
+  version: string | null;
+  model?: string;
+  state?: string;
+  connected?: boolean;
+  available?: boolean;
+  isAvailable?: boolean;
+  lastDetected?: string;
+  lastSeen?: string;
+  firstSeen?: string;
+  deviceId?: number;
+  inUseBy?: string | null;
+}
+
+interface RawFlow {
+  name: string;
+  supportsInfiniteMode?: boolean;
+  supportsInfinite?: boolean;
+  available?: boolean;
+  description?: string;
+  checkpoints?: FlowCheckpoint[];
+  defaultParams?: FlowConfig['defaultParams'];
+}
+
 export interface Device {
   udid: string;
   name: string;
-  version: string;
-  isAvailable: boolean;
-  lastDetected: string;
+  version: string | null;
+  model?: string;
+  state?: string;
+  connected?: boolean;
+  available?: boolean;
+  isAvailable?: boolean; // For compatibility
+  lastDetected?: string; // For compatibility
+  lastSeen?: string;
+  firstSeen?: string;
+  deviceId?: number;
   inUseBy?: string | null;
 }
 
@@ -26,11 +87,13 @@ export interface FlowCheckpoint {
 
 export interface FlowConfig {
   name: string;
-  supportsInfiniteMode: boolean;
-  available: boolean;
-  checkpoints: FlowCheckpoint[];
-  defaultParams: {
-    checkpoint: string;
+  supportsInfiniteMode?: boolean;
+  supportsInfinite?: boolean; // Alternative field name
+  available?: boolean;
+  description?: string;
+  checkpoints?: FlowCheckpoint[];
+  defaultParams?: {
+    checkpoint?: string;
     generateProfile?: boolean;
     infinite?: boolean;
     maxRuns?: number;
@@ -41,6 +104,7 @@ export interface FlowConfig {
       nameVariant?: string;
       tipoProxy?: string;  // ADDED
       emailreal?: boolean; // ADDED
+      proxyProfile?: string; // ADDED
     };
     params?: Record<string, string | number | boolean>;
   };
@@ -82,6 +146,7 @@ export interface AutomationSession {
     nameVariant?: string;
     tipoProxy?: string;  // ADDED
     emailreal?: boolean; // ADDED
+    proxyProfile?: string; // ADDED
   };
 }
 
@@ -99,6 +164,7 @@ export interface AutomationStartRequest {
     nameVariant?: string;
     tipoProxy?: string;  // ADDED - This was missing
     emailreal?: boolean; // ADDED - This was missing
+    proxyProfile?: string; // ADDED
   };
   params?: Record<string, string | number | boolean>;
 }
@@ -270,9 +336,41 @@ class ApiService {
     }
   }
 
+  // Transform raw device to expected format
+  private transformDevice(rawDevice: RawDevice): Device {
+    return {
+      ...rawDevice,
+      isAvailable: rawDevice.available ?? rawDevice.isAvailable ?? false,
+      lastDetected: rawDevice.lastSeen || rawDevice.lastDetected || new Date().toISOString(),
+      version: rawDevice.version || 'Unknown',
+    };
+  }
+
+  // Transform raw flow to expected format
+  private transformFlow(rawFlow: RawFlow): FlowConfig {
+    return {
+      ...rawFlow,
+      supportsInfiniteMode: rawFlow.supportsInfinite ?? rawFlow.supportsInfiniteMode ?? false,
+      available: rawFlow.available ?? true,
+      checkpoints: rawFlow.checkpoints || [],
+      defaultParams: rawFlow.defaultParams || {},
+    };
+  }
+
   // Get system metrics
   async getMetrics(): Promise<MetricsResponse> {
-    return this.request<MetricsResponse>('/api/metrics');
+    const response = await this.request<RawApiResponse<MetricsResponse['metrics']>>('/api/metrics');
+    // Check if metrics are nested in data field or directly in response
+    return {
+      status: response.status,
+      metrics: response.data || response.metrics || {
+        system: {} as SystemMetrics,
+        api: {} as ApiMetrics,
+        automation: {} as AutomationMetrics,
+        device: {} as DeviceMetrics,
+        appium: {} as AppiumMetrics
+      }
+    };
   }
 
   // Health check
@@ -282,40 +380,97 @@ class ApiService {
 
   // Device endpoints
   async getDevices(): Promise<DevicesResponse> {
-    return this.request<DevicesResponse>('/api/devices');
+    const response = await this.request<RawApiResponse<RawDevice[]>>('/api/devices');
+    // Transform the response to match expected format
+    const rawDevices = response.data || response.devices || [];
+    const devices = rawDevices.map(device => this.transformDevice(device));
+    
+    return {
+      status: response.status,
+      count: response.count || devices.length,
+      devices
+    };
   }
 
   async getAvailableDevices(): Promise<DevicesResponse> {
-    return this.request<DevicesResponse>('/api/devices/available');
+    const response = await this.request<RawApiResponse<RawDevice[]>>('/api/devices/available');
+    // Transform the response to match expected format
+    const rawDevices = response.data || response.devices || [];
+    const devices = rawDevices.map(device => this.transformDevice(device));
+    
+    return {
+      status: response.status,
+      count: response.count || devices.length,
+      devices
+    };
   }
 
   async getDevice(udid: string): Promise<DeviceResponse> {
-    return this.request<DeviceResponse>(`/api/devices/${udid}`);
+    const response = await this.request<RawApiResponse<RawDevice>>(`/api/devices/${udid}`);
+    // Transform the response to match expected format
+    const rawDevice = response.data || response.device;
+    const device = rawDevice ? this.transformDevice(rawDevice) : {} as Device;
+    
+    return {
+      status: response.status,
+      device
+    };
   }
 
   // Flow configuration endpoints (NUEVOS)
   async getAutomationFlows(): Promise<FlowsResponse> {
-    return this.request<FlowsResponse>('/api/automation/flows');
+    const response = await this.request<RawApiResponse<RawFlow[]>>('/api/automation/flows');
+    // Transform the response to match expected format
+    const rawFlows = response.data || response.flows || [];
+    const flows = rawFlows.map(flow => this.transformFlow(flow));
+    
+    return {
+      status: response.status,
+      count: response.count || flows.length,
+      flows
+    };
   }
 
   async getFlowConfig(flowName: string): Promise<{ status: string; flow: FlowConfig }> {
-    return this.request<{ status: string; flow: FlowConfig }>(`/api/automation/flows/${flowName}`);
+    const response = await this.request<RawApiResponse<RawFlow>>(`/api/automation/flows/${flowName}`);
+    // Transform the response to match expected format
+    const rawFlow = response.data || response.flow;
+    const flow = rawFlow ? this.transformFlow(rawFlow) : {} as FlowConfig;
+    
+    return {
+      status: response.status,
+      flow
+    };
   }
 
   // Automation endpoints
   async startAutomation(request: AutomationStartRequest): Promise<AutomationStartResponse> {
-    return this.request<AutomationStartResponse>('/api/automation/start', {
+    const response = await this.request<RawApiResponse<AutomationSession>>('/api/automation/start', {
       method: 'POST',
       body: JSON.stringify(request),
     });
+    return {
+      status: response.status,
+      message: response.message || 'Automation started',
+      session: response.data || response.session || {} as AutomationSession
+    };
   }
 
   async getAutomationStatus(sessionId: string): Promise<AutomationStatusResponse> {
-    return this.request<AutomationStatusResponse>(`/api/automation/${sessionId}/status`);
+    const response = await this.request<RawApiResponse<AutomationSession>>(`/api/automation/${sessionId}/status`);
+    return {
+      status: response.status,
+      session: response.data || response.session || {} as AutomationSession
+    };
   }
 
   async getAutomationSessions(): Promise<AutomationSessionsResponse> {
-    return this.request<AutomationSessionsResponse>('/api/automation');
+    const response = await this.request<RawApiResponse<AutomationSession[]>>('/api/automation');
+    // Transform the response to match expected format
+    return {
+      status: response.status,
+      sessions: response.data || response.sessions || []
+    };
   }
 
   async getAutomationLogs(
@@ -326,24 +481,44 @@ class ApiService {
     const params = new URLSearchParams({ limit: limit.toString() });
     if (level) params.append('level', level);
     
-    return this.request<AutomationLogsResponse>(
+    const response = await this.request<RawApiResponse<AutomationLog[]>>(
       `/api/automation/${sessionId}/logs?${params.toString()}`
     );
+    
+    return {
+      status: response.status,
+      count: response.count || response.data?.length || response.logs?.length || 0,
+      logs: response.data || response.logs || []
+    };
   }
 
   async stopAutomation(sessionId: string): Promise<{ status: string; message: string }> {
-    return this.request<{ status: string; message: string }>(`/api/automation/${sessionId}/stop`, {
+    const response = await this.request<RawApiResponse<{ message?: string }>>(`/api/automation/${sessionId}/stop`, {
       method: 'POST',
     });
+    return {
+      status: response.status,
+      message: response.message || response.data?.message || 'Automation stopped'
+    };
   }
 
   // Appium server endpoints
   async getAppiumServers(): Promise<AppiumServersResponse> {
-    return this.request<AppiumServersResponse>('/api/appium/servers');
+    const response = await this.request<RawApiResponse<AppiumServer[]>>('/api/appium/servers');
+    // Transform the response to match expected format
+    return {
+      status: response.status,
+      count: response.count || response.data?.length || response.servers?.length || 0,
+      servers: response.data || response.servers || []
+    };
   }
 
   async getAppiumServer(udid: string): Promise<AppiumServerResponse> {
-    return this.request<AppiumServerResponse>(`/api/appium/servers/${udid}`);
+    const response = await this.request<RawApiResponse<AppiumServer>>(`/api/appium/servers/${udid}`);
+    return {
+      status: response.status,
+      server: response.data || response.server || {} as AppiumServer
+    };
   }
 
   // Helper methods for specific metric categories
@@ -418,7 +593,10 @@ export const getDeviceType = (name: string): 'iPhone' | 'iPad' | 'Simulator' | '
 // Badge color type to match the Badge component
 export type BadgeColor = "primary" | "success" | "error" | "warning" | "info" | "light" | "dark";
 
-export const getDeviceStatusColor = (isAvailable: boolean, inUseBy?: string | null): BadgeColor => {
+export const getDeviceStatusColor = (device: Partial<Device>): BadgeColor => {
+  const inUseBy = device.inUseBy;
+  const isAvailable = device.available ?? device.isAvailable ?? false;
+  
   if (inUseBy) return 'error'; // En uso
   if (isAvailable) return 'success'; // Disponible
   return 'warning'; // No disponible

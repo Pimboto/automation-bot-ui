@@ -12,6 +12,7 @@ import { Modal } from '../ui/modal';
 import Badge from '../ui/badge/Badge';
 import { useModal } from '@/hooks/useModal';
 import { ChevronDownIcon } from '@/icons';
+import { useNotificationActions } from '@/components/notifications/NotificationSystem';
 
 interface DynamicAutomationFormProps {
   flowName: string;
@@ -30,6 +31,7 @@ interface FormState {
     nameVariant: string;
     tipoProxy?: string;
     emailreal?: boolean;
+    proxyProfile?: string;
   };
   params: Record<string, string | number | boolean>;
 }
@@ -128,6 +130,7 @@ const DynamicAutomationForm: React.FC<DynamicAutomationFormProps> = ({
       nameVariant: '',
       tipoProxy: 'residential',
       emailreal: false,
+      proxyProfile: '',
     },
     params: {},
   });
@@ -148,6 +151,7 @@ const DynamicAutomationForm: React.FC<DynamicAutomationFormProps> = ({
           nameVariant: defaults.profileOptions?.nameVariant ?? '',
           tipoProxy: defaults.profileOptions?.tipoProxy ?? 'residential',
           emailreal: defaults.profileOptions?.emailreal ?? false,
+          proxyProfile: defaults.profileOptions?.proxyProfile ?? '',
         },
         params: { ...defaults.params || {} },
       };
@@ -378,6 +382,7 @@ const DynamicAutomationForm: React.FC<DynamicAutomationFormProps> = ({
         nameVariant: formState.profileOptions.nameVariant || undefined,
         ...(formState.profileOptions.tipoProxy && { tipoProxy: formState.profileOptions.tipoProxy }),
         ...(formState.profileOptions.emailreal !== undefined && { emailreal: formState.profileOptions.emailreal }),
+        ...(formState.profileOptions.proxyProfile && { proxyProfile: formState.profileOptions.proxyProfile }),
       } : undefined;
 
       const request: AutomationStartRequest = {
@@ -807,6 +812,25 @@ const DynamicAutomationForm: React.FC<DynamicAutomationFormProps> = ({
                   </div>
                 )}
 
+                <div>
+                  <Label>Proxy Profile</Label>
+                  <div className="relative">
+                    <Select
+                      options={[
+                        { value: 'lumilux', label: 'Lumilux' },
+                        { value: 'ricky', label: 'Ricky' },
+                        { value: 'jack', label: 'Jack' }
+                      ]}
+                      value={formState.profileOptions.proxyProfile || ''}
+                      onChange={(value) => handleProfileOptionChange('proxyProfile', value)}
+                      placeholder="Select proxy profile"
+                    />
+                    <span className="absolute text-gray-500 -translate-y-1/2 pointer-events-none right-3 top-1/2 dark:text-gray-400">
+                      <ChevronDownIcon />
+                    </span>
+                  </div>
+                </div>
+
                 {hasEmailRealOption && (
                   <div>
                     <Checkbox
@@ -887,6 +911,7 @@ const DynamicAutomationForm: React.FC<DynamicAutomationFormProps> = ({
                       nameVariant: formState.profileOptions.nameVariant || undefined,
                       ...(formState.profileOptions.tipoProxy && { tipoProxy: formState.profileOptions.tipoProxy }),
                       ...(formState.profileOptions.emailreal !== undefined && { emailreal: formState.profileOptions.emailreal }),
+                      ...(formState.profileOptions.proxyProfile && { proxyProfile: formState.profileOptions.proxyProfile }),
                     }
                   }),
                   params: formState.params,

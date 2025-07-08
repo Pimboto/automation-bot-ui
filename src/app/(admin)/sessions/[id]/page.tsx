@@ -2,7 +2,7 @@
 import React from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import PageBreadcrumb from "@/components/common/PageBreadCrumb";
-import LogViewer from "@/components/automation/LogViewer";
+import EnhancedLogViewer from "@/components/automation/EnhancedLogViewer";
 import Button from "@/components/ui/button/Button";
 
 export default function SessionDetailPage() {
@@ -33,7 +33,8 @@ export default function SessionDetailPage() {
       </div>
       
       <div className="rounded-2xl border border-gray-200 bg-white p-5 dark:border-gray-800 dark:bg-white/[0.03] sm:p-6">
-        <LogViewer sessionId={sessionId} />
+      <EnhancedLogViewer sessionId={sessionId} />
+
       </div>
     </div>
   );

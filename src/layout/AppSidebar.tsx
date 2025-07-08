@@ -45,6 +45,11 @@ const navItems: NavItem[] = [
   path: "/sessions",
   icon: <ListIcon/>
 },
+  {
+  name: "Multi-Logs",
+  path: "/multi-logs",
+  icon: <ListIcon/>
+},
 
 ];
 
